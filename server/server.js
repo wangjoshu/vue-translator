@@ -3,36 +3,57 @@ import express from 'express'
 import cors from 'cors'
 import axios from 'axios'
 import crypto from 'crypto'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+// 正确加载环境变量
 import dotenv from 'dotenv'
-
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = __filename.replace(/\\/g, '/').replace(/\/server\.js$/, '');
-
-// 加载环境变量
 if (process.env.NODE_ENV !== 'production') {
-  const dotenv = await import('dotenv');
-  dotenv.config();
+  dotenv.config()
 }
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
-const PORT = 3000 || process.env.PORT
+const PORT = process.env.PORT || 3000  // 重要：使用环境变量端口
 
 // 中间件
 app.use(cors())
 app.use(express.json())
 
-// 从环境变量获取百度API配置
+// 静态文件服务 - 生产环境服务Vue构建文件
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')))
+}
+
+// 从环境变量获取API配置
 const BAIDU_APP_ID = process.env.BAIDU_APP_ID
 const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY
+const PIXABAY_KEY = process.env.PIXABAY_KEY
 
 // 健康检查端点
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: '翻译服务运行中' })
+  res.json({ 
+    status: 'ok', 
+    message: '翻译服务运行中',
+    environment: process.env.NODE_ENV || 'development'
+  })
 })
 
-// 翻译端点
+// 根路径重定向到前端
+app.get('/', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../dist/index.html'))
+  } else {
+    res.json({ 
+      message: '开发模式：请访问前端开发服务器',
+      frontend_url: 'http://localhost:5173'
+    })
+  }
+})
+
+// 翻译端点（保持不变）
 app.post('/api/translate', async (req, res) => {
   try {
     const { q, from = 'auto', to = 'en' } = req.body
@@ -45,11 +66,10 @@ app.post('/api/translate', async (req, res) => {
       return res.status(500).json({ error: '服务器翻译配置错误' })
     }
 
-    // 生成百度API需要的参数 - 使用 crypto 替代 md5
+    // 生成百度API需要的参数
     const salt = Date.now().toString()
     const sign = crypto.createHash('md5').update(BAIDU_APP_ID + q + salt + BAIDU_SECRET_KEY).digest('hex')
 
-    // 调用百度翻译API
     const response = await axios.post('https://fanyi-api.baidu.com/api/trans/vip/translate?', 
       new URLSearchParams({
         q,
@@ -70,7 +90,6 @@ app.post('/api/translate', async (req, res) => {
     console.error('翻译服务错误:', error)
     
     if (error.response) {
-      // 百度API返回的错误
       res.status(400).json({ 
         error: '翻译失败', 
         details: error.response.data 
@@ -84,7 +103,7 @@ app.post('/api/translate', async (req, res) => {
   }
 })
 
-// 英语词典
+// 英语词典（保持不变）
 app.post('/api/dictionary', async (req, res) => {
   try {
     const { word } = req.body
@@ -94,11 +113,9 @@ app.post('/api/dictionary', async (req, res) => {
       return res.status(400).json({ error: '缺少查询单词' })
     }
 
-    // 添加超时设置
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000)
     
-    // 修复URL：使用动态单词参数
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
       signal: controller.signal
     })
@@ -106,7 +123,6 @@ app.post('/api/dictionary', async (req, res) => {
     clearTimeout(timeoutId)
     
     if (!response.ok) {
-      // 根据外部API的错误状态返回相应信息
       if (response.status === 404) {
         return res.status(404).json({ 
           error: '未找到该单词的释义',
@@ -121,7 +137,6 @@ app.post('/api/dictionary', async (req, res) => {
     const data = await response.json()
     console.log('词典查询成功:', word)
     
-    // 修复：通过res.json()返回数据给前端
     res.json({
       success: true,
       data: data
@@ -136,7 +151,6 @@ app.post('/api/dictionary', async (req, res) => {
       })
     }
     
-    // 修复：确保所有错误路径都有响应
     res.status(500).json({ 
       error: '词典服务暂时不可用',
       message: error.message 
@@ -144,7 +158,7 @@ app.post('/api/dictionary', async (req, res) => {
   }
 })
 
-// 图片获取
+// 图片获取（保持不变）
 app.post('/api/pixabay', async (req, res) => {
   try {
     const { query } = req.body
@@ -180,10 +194,26 @@ app.post('/api/pixabay', async (req, res) => {
   }
 })
 
+// SPA路由支持 - 所有未匹配的路由返回前端页面
+app.get('*', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../dist/index.html'))
+  } else {
+    res.status(404).json({ error: '路由不存在' })
+  }
+})
+
 app.listen(PORT, () => {
-  console.log(`翻译后端服务运行在 http://localhost:${PORT}`)
-  console.log('百度API配置:', { 
-    appId: BAIDU_APP_ID ? '已配置' : '未配置',
-    secretKey: BAIDU_SECRET_KEY ? '已配置' : '未配置' 
-  })
+  console.log(`🚀 翻译后端服务运行在端口: ${PORT}`)
+  console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`)
+  console.log('📊 API配置状态:')
+  console.log(`   - 百度翻译: ${BAIDU_APP_ID ? '已配置' : '未配置'}`)
+  console.log(`   - Pixabay: ${PIXABAY_KEY ? '已配置' : '未配置'}`)
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`📍 生产环境访问: https://你的项目名.railway.app`)
+  } else {
+    console.log(`📍 本地前端访问: http://localhost:5173`)
+    console.log(`📍 本地API访问: http://localhost:${PORT}`)
+  }
 })
