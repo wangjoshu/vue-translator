@@ -195,12 +195,9 @@ app.post('/api/pixabay', async (req, res) => {
 })
 
 // SPA路由支持 - 所有未匹配的路由返回前端页面
-app.get('*', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    res.sendFile(path.join(__dirname, '../dist/index.html'))
-  } else {
-    res.status(404).json({ error: '路由不存在' })
-  }
+// 或者更简单的写法
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'))
 })
 
 app.listen(PORT, () => {
