@@ -6,7 +6,7 @@ import axios from "axios";
  * @return {object} 图片查询结果
  */
 export async function fetchPhoto(query) {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://vue-translator-production.up.railway.app'
     const url = `${baseURL}/api/pixabay`
     try {
         const params = { query }

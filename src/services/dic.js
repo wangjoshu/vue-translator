@@ -6,7 +6,7 @@ import axios from 'axios'
  * @return {object} 词典查询结果
  */
 export async function fetchDictionary(word) {
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://vue-translator-production.up.railway.app'
   const url = `${baseURL}/api/dictionary`
   
   try {

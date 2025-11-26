@@ -9,7 +9,7 @@ import md5 from 'js-md5'
  */
 export async function baiduTranslate(q, from = 'auto', to = 'en') {
   // 使用后端服务的API地址
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://vue-translator-production.up.railway.app'
   const url = `${baseURL}/api/translate`
   
   try {
