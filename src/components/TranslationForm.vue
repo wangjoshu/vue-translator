@@ -113,4 +113,40 @@ onMounted(() => {
     border-color: #9ad0f5;
     box-shadow: 0 0 8px rgba(114, 180, 233, 0.6);
 }
+/* 响应式设计 - 手机端 */
+@media (max-width: 768px) {
+    .translation-form {
+        flex-direction: column; /* 改为垂直排列 */
+        gap: 15px; /* 调整间距 */
+    }
+    
+    .box {
+        height: 250px; /* 手机端可以适当调整高度 */
+        flex: none; /* 取消flex:1，让高度由内容决定 */
+    }
+    
+    .box textarea {
+        font-size: 24px; /* 手机端字体可以稍小一些 */
+    }
+    
+    .container {
+        padding: 15px; /* 手机端内边距可以小一些 */
+    }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+    .box {
+        height: 200px;
+    }
+    
+    .box textarea {
+        font-size: 20px;
+        padding: 8px;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+}
 </style>
