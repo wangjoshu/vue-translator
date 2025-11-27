@@ -13,8 +13,8 @@ import TranslationForm from '@/components/TranslationForm.vue';
     overflow-x: hidden;
 }
 
-/* 当屏幕宽度小于等于 768px 时（手机屏幕） */
-@media screen and (max-width: 768px) {
+/* 当屏幕宽度小于等于 600px 时（手机屏幕） */
+@media (max-width: 600px) {
     * {
         width: 100% !important;
         margin: 0 auto;
