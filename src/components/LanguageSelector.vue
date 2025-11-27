@@ -265,7 +265,10 @@ onMounted(() => {
         flex-direction: column;
         gap: 15px;
     }
-    
+    .language-selector {
+        width: 100%;
+        flex: 1;
+    }
     .swap-button {
         transform: rotate(90deg);
     }
